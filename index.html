@@ -33,7 +33,7 @@
         <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-blue-500">
             <p class="uppercase text-gray-500 font-semibold">ความชื้นดิน</p>
             <div class="text-5xl font-bold text-blue-600 my-2">
-                <span id="soil-val">--</span> %
+                <span id="soil-val">--</span>
             </div>
             <p id="soil-status" class="text-sm font-semibold"></p>
         </div>
@@ -55,14 +55,12 @@
 
             <div>
                 <label class="text-sm text-gray-600">อุณหภูมิเตือน (°C)</label>
-                <input id="limit-temp" type="number"
-                       class="w-full mt-1 p-2 border rounded">
+                <input id="limit-temp" type="number" class="w-full mt-1 p-2 border rounded">
             </div>
 
             <div>
-                <label class="text-sm text-gray-600">ความชื้นดินเตือน (%)</label>
-                <input id="limit-soil" type="number"
-                       class="w-full mt-1 p-2 border rounded">
+                <label class="text-sm text-gray-600">ความชื้นเตือน</label>
+                <input id="limit-soil" type="number" class="w-full mt-1 p-2 border rounded">
             </div>
 
         </div>
@@ -106,37 +104,30 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ================= LIMIT DEFAULT ================= */
-let tempLimit = 30;
-let soilLimit = 30; // % ความชื้นต่ำกว่า = เตือน
-
 /* ================= SENSOR READ ================= */
+let tempLimit = 30;
+let soilLimit = 700;
 
 // Temperature
 db.ref("sensor/temp").on("value", snap => {
     const v = snap.val();
-    document.getElementById("temp-val").innerText =
-        v !== null ? v.toFixed(1) : "--";
-
+    document.getElementById("temp-val").innerText = v?.toFixed(1) ?? "--";
     document.getElementById("temp-status").innerText =
         v >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
 });
 
-// Soil (%)
+// Soil
 db.ref("sensor/soil").on("value", snap => {
     const v = snap.val();
-    document.getElementById("soil-val").innerText =
-        v !== null ? v : "--";
-
+    document.getElementById("soil-val").innerText = v ?? "--";
     document.getElementById("soil-status").innerText =
-        v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
+        v >= soilLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
 });
 
 // LDR
 db.ref("sensor/light").on("value", snap => {
     const v = snap.val();
-    document.getElementById("ldr-val").innerText =
-        v == 1 ? "🌞 สว่าง" : "🌙 มืด";
+    document.getElementById("ldr-val").innerText = v == 1 ? "🌞 สว่าง" : "🌙 มืด";
     document.getElementById("ldr-status").innerText = "สถานะปัจจุบัน";
 });
 
@@ -146,7 +137,6 @@ db.ref("limit").on("value", snap => {
     if (data) {
         tempLimit = data.temp;
         soilLimit = data.soil;
-
         document.getElementById("limit-temp").value = tempLimit;
         document.getElementById("limit-soil").value = soilLimit;
     }
@@ -170,8 +160,7 @@ function sendCommand(cmd) {
 }
 
 db.ref("control/last_command").on("value", snap => {
-    document.getElementById("last-cmd").innerText =
-        snap.val() || "--";
+    document.getElementById("last-cmd").innerText = snap.val() || "--";
 });
 </script>
 
