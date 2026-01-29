@@ -29,7 +29,7 @@
             <p id="temp-status" class="text-sm font-semibold"></p>
         </div>
 
-        <!-- Soil -->
+        <!-- Soil (% FIXED) -->
         <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-blue-500">
             <p class="uppercase text-gray-500 font-semibold">ความชื้นดิน</p>
             <div class="text-5xl font-bold text-blue-600 my-2">
@@ -122,9 +122,10 @@ db.ref("sensor/temp").on("value", snap => {
         v >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
 });
 
-// Soil (%)
-db.ref("sensor/soil").on("value", snap => {
+// 🌱 Soil (% FIXED)
+db.ref("sensor/soil_percent").on("value", snap => {
     const v = snap.val();
+
     document.getElementById("soil-val").innerText =
         v !== null ? v : "--";
 
