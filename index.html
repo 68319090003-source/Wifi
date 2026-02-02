@@ -5,7 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Smart Farm Dashboard</title>
 
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Firebase v8 -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
@@ -54,12 +57,14 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div>
         <label class="text-sm text-gray-600">อุณหภูมิเตือน (°C)</label>
-        <input id="limit-temp" type="number" class="w-full mt-1 p-2 border rounded">
+        <input id="limit-temp" type="number"
+               class="w-full mt-1 p-2 border rounded">
       </div>
 
       <div>
         <label class="text-sm text-gray-600">ความชื้นดินเตือน (%)</label>
-        <input id="limit-soil" type="number" class="w-full mt-1 p-2 border rounded">
+        <input id="limit-soil" type="number"
+               class="w-full mt-1 p-2 border rounded">
       </div>
     </div>
 
@@ -71,8 +76,9 @@
 
 </div>
 
+<!-- ================= SCRIPT ================= -->
 <script>
-/* ===== Firebase ===== */
+/* ===== FIREBASE INIT ===== */
 firebase.initializeApp({
   apiKey: "AIzaSy...",
   databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com/",
@@ -80,36 +86,12 @@ firebase.initializeApp({
 });
 const db = firebase.database();
 
-/* ===== LIMIT ===== */
+/* ===== LIMIT DEFAULT ===== */
 let tempLimit = 30;
 let soilLimit = 30;
 
-/* ===== SENSOR ===== */
-db.ref("sensor/temp").on("value", s => {
-  const v = s.val();
-  document.getElementById("temp-val").innerText =
-    v !== null ? v.toFixed(1) : "--";
-  document.getElementById("temp-status").innerText =
-    v >= tempLimit ? "🚨 เกินค่าที่ตั้ง" : "ปกติ";
-});
-
-db.ref("sensor/soil_percent").on("value", s => {
-  const v = Number(s.val());
-  document.getElementById("soil-val").innerText =
-    !isNaN(v) ? v : "--";
-  document.getElementById("soil-status").innerText =
-    v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
-});
-
-db.ref("sensor/light").on("value", s => {
-  const v = s.val();
-  document.getElementById("ldr-val").innerText =
-    v == 1 ? "🌞 สว่าง" : "🌙 มืด";
-  document.getElementById("ldr-status").innerText = "สถานะปัจจุบัน";
-});
-
-/* ===== LIMIT READ/WRITE ===== */
-db.ref("limit").on("value", s => {
+/* ===== LOAD LIMIT (ครั้งเดียว) ===== */
+db.ref("limit").once("value").then(s => {
   if (!s.exists()) return;
   tempLimit = s.val().temp;
   soilLimit = s.val().soil;
@@ -117,10 +99,38 @@ db.ref("limit").on("value", s => {
   document.getElementById("limit-soil").value = soilLimit;
 });
 
+/* ===== SENSOR (ฟัง node เดียว = เร็ว) ===== */
+db.ref("sensor").on("value", snap => {
+  const d = snap.val();
+  if (!d) return;
+
+  // TEMP
+  if (d.temp !== undefined) {
+    document.getElementById("temp-val").innerText = d.temp.toFixed(1);
+    document.getElementById("temp-status").innerText =
+      d.temp >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+  }
+
+  // SOIL
+  if (d.soil_percent !== undefined) {
+    document.getElementById("soil-val").innerText = d.soil_percent;
+    document.getElementById("soil-status").innerText =
+      d.soil_percent <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
+  }
+
+  // LDR
+  if (d.light !== undefined) {
+    document.getElementById("ldr-val").innerText =
+      d.light == 1 ? "🌞 สว่าง" : "🌙 มืด";
+    document.getElementById("ldr-status").innerText = "สถานะปัจจุบัน";
+  }
+});
+
+/* ===== SAVE LIMIT ===== */
 function saveLimit() {
   db.ref("limit").set({
-    temp: Number(limit-temp.value),
-    soil: Number(limit-soil.value)
+    temp: Number(document.getElementById("limit-temp").value),
+    soil: Number(document.getElementById("limit-soil").value)
   });
   alert("บันทึกค่าเรียบร้อย");
 }
