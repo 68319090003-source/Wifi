@@ -113,6 +113,16 @@ let soilLimit = 30;
 /* ================= SENSOR READ ================= */
 
 // Temperature
+db.ref("sensor/temp").on("value", snap => {
+    const v = snap.val();
+    document.getElementById("temp-val").innerText =
+        v !== null ? v.toFixed(1) : "--";
+
+    document.getElementById("temp-status").innerText =
+        v >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+});
+
+// Soil (%)
 db.ref("sensor/soil_percent").on("value", snap => {
     const v = Number(snap.val());
 
@@ -122,17 +132,6 @@ db.ref("sensor/soil_percent").on("value", snap => {
     document.getElementById("soil-status").innerText =
         v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
 });
-
-// Soil (%)
-db.ref("sensor/soil").on("value", snap => {
-    const v = snap.val();
-    document.getElementById("soil-val").innerText =
-        v !== null ? v : "--";
-
-    document.getElementById("soil-status").innerText =
-        v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
-});
-
 // LDR
 db.ref("sensor/light").on("value", snap => {
     const v = snap.val();
