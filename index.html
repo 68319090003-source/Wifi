@@ -113,13 +113,14 @@ let soilLimit = 30;
 /* ================= SENSOR READ ================= */
 
 // Temperature
-db.ref("sensor/temp").on("value", snap => {
-    const v = snap.val();
-    document.getElementById("temp-val").innerText =
-        v !== null ? v.toFixed(1) : "--";
+db.ref("sensor/soil_percent").on("value", snap => {
+    const v = Number(snap.val());
 
-    document.getElementById("temp-status").innerText =
-        v >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+    document.getElementById("soil-val").innerText =
+        !isNaN(v) ? v : "--";
+
+    document.getElementById("soil-status").innerText =
+        v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
 });
 
 // Soil (%)
