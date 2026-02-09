@@ -117,11 +117,22 @@ db.ref("sensor/temp").on("value", snap => {
 });
 
 // Soil
-db.ref("sensor/soil").on("value", snap => {
+db.ref("sensor/soil_percent").on("value", snap => {
+
     const v = snap.val();
-    document.getElementById("soil-val").innerText = v ?? "--";
-    document.getElementById("soil-status").innerText =
-        v >= soilLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+
+    if(v !== null){
+
+        document.getElementById("soil-val").innerText = v + " %";
+
+        document.getElementById("soil-status").innerText =
+            v <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
+
+    }else{
+        document.getElementById("soil-val").innerText = "--";
+        document.getElementById("soil-status").innerText = "";
+    }
+
 });
 
 // LDR
