@@ -20,6 +20,7 @@
 <!-- SENSOR DISPLAY -->
 <div id="sensor-panel" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
+<!-- TEMP -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-orange-500">
 <p class="uppercase text-gray-500 font-semibold">อุณหภูมิ</p>
 <div class="text-5xl font-bold text-orange-600 my-2">
@@ -28,6 +29,7 @@
 <p id="temp-status" class="text-sm font-semibold"></p>
 </div>
 
+<!-- SOIL -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-blue-500">
 <p class="uppercase text-gray-500 font-semibold">ความชื้นดิน</p>
 <div class="text-5xl font-bold text-blue-600 my-2">
@@ -36,36 +38,13 @@
 <p id="soil-status" class="text-sm font-semibold"></p>
 </div>
 
+<!-- LDR -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-yellow-500">
 <p class="uppercase text-gray-500 font-semibold">แสง (LDR)</p>
 <div class="text-4xl font-bold my-2" id="ldr-val">--</div>
 <p id="ldr-status" class="text-sm font-semibold"></p>
 </div>
 
-</div>
-
-<!-- LIMIT -->
-<div class="bg-white rounded-xl shadow-lg p-8 max-w-xl mx-auto mb-10 border-t-4 border-red-500">
-<h2 class="text-xl font-bold text-center mb-6">⚙️ ตั้งค่าแจ้งเตือน</h2>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-<div>
-<label class="text-sm text-gray-600">อุณหภูมิเตือน (°C)</label>
-<input id="limit-temp" type="number" class="w-full mt-1 p-2 border rounded">
-</div>
-
-<div>
-<label class="text-sm text-gray-600">ความชื้นเตือน (%)</label>
-<input id="limit-soil" type="number" class="w-full mt-1 p-2 border rounded">
-</div>
-
-</div>
-
-<button onclick="saveLimit()"
-class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-bold">
-บันทึกค่า Limit
-</button>
 </div>
 
 <!-- CONTROL -->
@@ -104,8 +83,6 @@ const db = firebase.database();
 
 /* STATE */
 let systemEnabled = true;
-let tempLimit = 30;
-let soilLimit = 50;
 
 /* CLEAR DISPLAY */
 function clearSensorDisplay(){
@@ -127,98 +104,67 @@ function enableSensorDisplay(){
 document.getElementById("sensor-panel").classList.remove("opacity-40");
 }
 
-/* ⭐ RELOAD SENSOR (แก้บัคหลัก) */
+/* โหลดค่าเซ็นเซอร์ทันที */
 function reloadSensorData(){
 
-db.ref("sensor/temp").once("value").then(snap=>{
-const v=snap.val();
-if(v!=null){
-document.getElementById("temp-val").innerText=v.toFixed(1);
-document.getElementById("temp-status").innerText=
-v>=tempLimit ? "🚨 เกินค่าที่ตั้งไว้":"ปกติ";
-}
-});
+db.ref("sensor").once("value").then(snap=>{
 
-db.ref("sensor/soil_percent").once("value").then(snap=>{
-const v=snap.val();
-if(v!=null){
-document.getElementById("soil-val").innerText=v+" %";
-}
-});
+const d = snap.val();
+if(!d) return;
 
-db.ref("sensor/light").once("value").then(snap=>{
-const v=snap.val();
-if(v!=null){
+if(d.temp!=null){
+document.getElementById("temp-val").innerText=d.temp.toFixed(1);
+document.getElementById("temp-status").innerText="ปกติ";
+}
+
+if(d.soil_percent!=null){
+document.getElementById("soil-val").innerText=d.soil_percent+" %";
+}
+
+if(d.light!=null){
 document.getElementById("ldr-val").innerText=
-v==1 ? "🌞 สว่าง":"🌙 มืด";
+d.light==1 ? "🌞 สว่าง":"🌙 มืด";
 }
+
 });
 
 }
 
-/* SENSOR REALTIME */
+/* REALTIME SENSOR */
+db.ref("sensor").on("value", snap=>{
+
+if(!systemEnabled) return;
+
+const d = snap.val();
+if(!d) return;
 
 // TEMP
-db.ref("sensor/temp").on("value", snap=>{
-if(!systemEnabled) return;
-
-const v=snap.val();
-if(v!=null){
-document.getElementById("temp-val").innerText=v.toFixed(1);
-document.getElementById("temp-status").innerText=
-v>=tempLimit ? "🚨 เกินค่าที่ตั้งไว้":"ปกติ";
+if(d.temp!=null){
+document.getElementById("temp-val").innerText=d.temp.toFixed(1);
+document.getElementById("temp-status").innerText="ปกติ";
 }
-});
 
 // SOIL
-db.ref("sensor/soil_percent").on("value", snap=>{
-if(!systemEnabled) return;
+if(d.soil_percent!=null){
 
-const v=snap.val();
-if(v!=null){
-
-document.getElementById("soil-val").innerText=v+" %";
+document.getElementById("soil-val").innerText=d.soil_percent+" %";
 
 let status="ปกติ";
-if(v<=30) status="🚨 ดินแห้ง";
-else if(v<=60) status="🌱 กำลังดี";
+if(d.soil_percent<=30) status="🚨 ดินแห้ง";
+else if(d.soil_percent<=60) status="🌱 กำลังดี";
 else status="💧 ชื้นมาก";
 
 document.getElementById("soil-status").innerText=status;
 }
-});
 
 // LDR
-db.ref("sensor/light").on("value", snap=>{
-if(!systemEnabled) return;
-
-const v=snap.val();
-if(v!=null){
+if(d.light!=null){
 document.getElementById("ldr-val").innerText=
-v==1 ? "🌞 สว่าง":"🌙 มืด";
+d.light==1 ? "🌞 สว่าง":"🌙 มืด";
 document.getElementById("ldr-status").innerText="สถานะปัจจุบัน";
 }
+
 });
-
-/* LIMIT */
-db.ref("limit").on("value", snap=>{
-const data=snap.val();
-if(!data) return;
-
-tempLimit=data.temp;
-soilLimit=data.soil;
-
-document.getElementById("limit-temp").value=tempLimit;
-document.getElementById("limit-soil").value=soilLimit;
-});
-
-function saveLimit(){
-db.ref("limit").set({
-temp:Number(document.getElementById("limit-temp").value),
-soil:Number(document.getElementById("limit-soil").value)
-});
-alert("บันทึกค่าเรียบร้อย");
-}
 
 /* CONTROL */
 function sendCommand(cmd){
@@ -239,7 +185,7 @@ clearSensorDisplay();
 
 systemEnabled=true;
 enableSensorDisplay();
-reloadSensorData(); // ⭐ โหลดค่าทันทีตอน ON
+reloadSensorData();
 
 }
 
