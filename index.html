@@ -17,10 +17,9 @@
 🌿 Smart Monitor Dashboard
 </h1>
 
-<!-- ================= SENSOR DISPLAY ================= -->
+<!-- SENSOR DISPLAY -->
 <div id="sensor-panel" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
-<!-- Temperature -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-orange-500">
 <p class="uppercase text-gray-500 font-semibold">อุณหภูมิ</p>
 <div class="text-5xl font-bold text-orange-600 my-2">
@@ -29,7 +28,6 @@
 <p id="temp-status" class="text-sm font-semibold"></p>
 </div>
 
-<!-- Soil -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-blue-500">
 <p class="uppercase text-gray-500 font-semibold">ความชื้นดิน</p>
 <div class="text-5xl font-bold text-blue-600 my-2">
@@ -38,7 +36,6 @@
 <p id="soil-status" class="text-sm font-semibold"></p>
 </div>
 
-<!-- LDR -->
 <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-yellow-500">
 <p class="uppercase text-gray-500 font-semibold">แสง (LDR)</p>
 <div class="text-4xl font-bold my-2" id="ldr-val">--</div>
@@ -47,7 +44,7 @@
 
 </div>
 
-<!-- ================= LIMIT SETTING ================= -->
+<!-- LIMIT -->
 <div class="bg-white rounded-xl shadow-lg p-8 max-w-xl mx-auto mb-10 border-t-4 border-red-500">
 <h2 class="text-xl font-bold text-center mb-6">⚙️ ตั้งค่าแจ้งเตือน</h2>
 
@@ -71,7 +68,7 @@ class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-b
 </button>
 </div>
 
-<!-- ================= DEVICE CONTROL ================= -->
+<!-- CONTROL -->
 <div class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto border-t-4 border-green-500">
 <h2 class="text-xl font-bold text-center mb-6">Device Control</h2>
 
@@ -96,7 +93,7 @@ class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg">
 
 <script>
 
-/* ================= FIREBASE ================= */
+/* FIREBASE */
 firebase.initializeApp({
 apiKey: "AIzaSy...",
 databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com/",
@@ -105,12 +102,12 @@ projectId: "wifi-73e6a"
 
 const db = firebase.database();
 
-/* ================= SYSTEM STATE ================= */
+/* STATE */
 let systemEnabled = true;
 let tempLimit = 30;
 let soilLimit = 50;
 
-/* ================= CLEAR DISPLAY ================= */
+/* CLEAR DISPLAY */
 function clearSensorDisplay(){
 
 document.getElementById("temp-val").innerText="--";
@@ -125,69 +122,86 @@ document.getElementById("ldr-status").innerText="ระบบปิด";
 document.getElementById("sensor-panel").classList.add("opacity-40");
 }
 
-/* ================= ENABLE DISPLAY ================= */
+/* ENABLE DISPLAY */
 function enableSensorDisplay(){
 document.getElementById("sensor-panel").classList.remove("opacity-40");
 }
 
-/* ================= SENSOR READ ================= */
+/* ⭐ RELOAD SENSOR (แก้บัคหลัก) */
+function reloadSensorData(){
 
-// Temperature
-db.ref("sensor/temp").on("value", snap=>{
-
-if(!systemEnabled) return;
-
+db.ref("sensor/temp").once("value").then(snap=>{
 const v=snap.val();
-
-if(v!==null){
+if(v!=null){
 document.getElementById("temp-val").innerText=v.toFixed(1);
 document.getElementById("temp-status").innerText=
 v>=tempLimit ? "🚨 เกินค่าที่ตั้งไว้":"ปกติ";
 }
-
 });
 
-// Soil %
-db.ref("sensor/soil_percent").on("value", snap=>{
+db.ref("sensor/soil_percent").once("value").then(snap=>{
+const v=snap.val();
+if(v!=null){
+document.getElementById("soil-val").innerText=v+" %";
+}
+});
 
+db.ref("sensor/light").once("value").then(snap=>{
+const v=snap.val();
+if(v!=null){
+document.getElementById("ldr-val").innerText=
+v==1 ? "🌞 สว่าง":"🌙 มืด";
+}
+});
+
+}
+
+/* SENSOR REALTIME */
+
+// TEMP
+db.ref("sensor/temp").on("value", snap=>{
 if(!systemEnabled) return;
 
 const v=snap.val();
+if(v!=null){
+document.getElementById("temp-val").innerText=v.toFixed(1);
+document.getElementById("temp-status").innerText=
+v>=tempLimit ? "🚨 เกินค่าที่ตั้งไว้":"ปกติ";
+}
+});
 
-if(v!==null){
+// SOIL
+db.ref("sensor/soil_percent").on("value", snap=>{
+if(!systemEnabled) return;
+
+const v=snap.val();
+if(v!=null){
 
 document.getElementById("soil-val").innerText=v+" %";
 
 let status="ปกติ";
-
 if(v<=30) status="🚨 ดินแห้ง";
 else if(v<=60) status="🌱 กำลังดี";
 else status="💧 ชื้นมาก";
 
 document.getElementById("soil-status").innerText=status;
-
 }
-
 });
 
 // LDR
 db.ref("sensor/light").on("value", snap=>{
-
 if(!systemEnabled) return;
 
 const v=snap.val();
-
-if(v!==null){
+if(v!=null){
 document.getElementById("ldr-val").innerText=
 v==1 ? "🌞 สว่าง":"🌙 มืด";
 document.getElementById("ldr-status").innerText="สถานะปัจจุบัน";
 }
-
 });
 
-/* ================= LIMIT ================= */
+/* LIMIT */
 db.ref("limit").on("value", snap=>{
-
 const data=snap.val();
 if(!data) return;
 
@@ -196,22 +210,17 @@ soilLimit=data.soil;
 
 document.getElementById("limit-temp").value=tempLimit;
 document.getElementById("limit-soil").value=soilLimit;
-
 });
 
 function saveLimit(){
-
 db.ref("limit").set({
 temp:Number(document.getElementById("limit-temp").value),
 soil:Number(document.getElementById("limit-soil").value)
 });
-
 alert("บันทึกค่าเรียบร้อย");
-
 }
 
-/* ================= CONTROL ================= */
-
+/* CONTROL */
 function sendCommand(cmd){
 db.ref("control").update({last_command:cmd});
 }
@@ -222,11 +231,16 @@ const cmd=snap.val() || "--";
 document.getElementById("last-cmd").innerText=cmd;
 
 if(cmd==="off"){
+
 systemEnabled=false;
 clearSensorDisplay();
+
 }else{
+
 systemEnabled=true;
 enableSensorDisplay();
+reloadSensorData(); // ⭐ โหลดค่าทันทีตอน ON
+
 }
 
 });
