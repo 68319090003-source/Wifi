@@ -1,188 +1,167 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Farm Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Farm Dashboard</title>
 
-<!-- Tailwind -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- Firebase -->
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 </head>
 
-<body class="bg-gray-100 min-h-screen font-sans">
-
+<body class="bg-gray-100 font-sans min-h-screen">
 <div class="container mx-auto px-4 py-10">
 
-<h1 class="text-3xl font-bold text-center text-green-700 mb-6">
-🌿 Smart Monitor Dashboard
-</h1>
+    <h1 class="text-3xl font-bold text-center text-green-700 mb-10">
+        🌿 Smart Monitor Dashboard
+    </h1>
 
-<p id="status" class="text-center text-sm mb-6 text-gray-500">
-กำลังเชื่อมต่อ Firebase...
-</p>
+    <!-- ================= SENSOR DISPLAY ================= -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
-<!-- ===== SENSOR DISPLAY ===== -->
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <!-- Temperature -->
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-orange-500">
+            <p class="uppercase text-gray-500 font-semibold">อุณหภูมิ</p>
+            <div class="text-5xl font-bold text-orange-600 my-2">
+                <span id="temp-val">--</span> °C
+            </div>
+            <p id="temp-status" class="text-sm font-semibold"></p>
+        </div>
 
-<!-- TEMP -->
-<div class="bg-white p-6 rounded-xl shadow border-t-4 border-orange-500 text-center">
-<p class="text-gray-500 font-semibold">อุณหภูมิ</p>
-<div class="text-5xl font-bold text-orange-600">
-<span id="temp-val">--</span> °C
-</div>
-<p id="temp-status" class="text-sm font-semibold"></p>
-</div>
+        <!-- Soil -->
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-blue-500">
+            <p class="uppercase text-gray-500 font-semibold">ความชื้นดิน</p>
+            <div class="text-5xl font-bold text-blue-600 my-2">
+                <span id="soil-val">--</span>
+            </div>
+            <p id="soil-status" class="text-sm font-semibold"></p>
+        </div>
 
-<!-- SOIL -->
-<div class="bg-white p-6 rounded-xl shadow border-t-4 border-blue-500 text-center">
-<p class="text-gray-500 font-semibold">ความชื้นดิน</p>
-<div class="text-5xl font-bold text-blue-600">
-<span id="soil-val">--</span> %
-</div>
-<p id="soil-status" class="text-sm font-semibold"></p>
-</div>
+        <!-- LDR -->
+        <div class="bg-white rounded-xl shadow-lg p-6 text-center border-t-4 border-yellow-500">
+            <p class="uppercase text-gray-500 font-semibold">แสง (LDR)</p>
+            <div class="text-4xl font-bold my-2" id="ldr-val">--</div>
+            <p id="ldr-status" class="text-sm font-semibold"></p>
+        </div>
 
-<!-- LDR -->
-<div class="bg-white p-6 rounded-xl shadow border-t-4 border-yellow-500 text-center">
-<p class="text-gray-500 font-semibold">แสง (LDR)</p>
-<div id="ldr-val" class="text-4xl font-bold my-2">--</div>
-<p id="ldr-status" class="text-sm font-semibold"></p>
-</div>
+    </div>
 
-</div>
+    <!-- ================= LIMIT SETTING ================= -->
+    <div class="bg-white rounded-xl shadow-lg p-8 max-w-xl mx-auto mb-10 border-t-4 border-red-500">
+        <h2 class="text-xl font-bold text-center mb-6">⚙️ ตั้งค่าแจ้งเตือน</h2>
 
-<!-- ===== LIMIT SETTING ===== -->
-<div class="bg-white p-8 rounded-xl shadow max-w-xl mx-auto border-t-4 border-red-500">
-<h2 class="text-xl font-bold text-center mb-6">⚙️ ตั้งค่าแจ้งเตือน</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="text-sm text-gray-600">อุณหภูมิเตือน (°C)</label>
+                <input id="limit-temp" type="number" class="w-full mt-1 p-2 border rounded">
+            </div>
 
-<div>
-<label class="text-sm text-gray-600">อุณหภูมิเตือน (°C)</label>
-<input id="limit-temp" type="number" class="w-full mt-1 p-2 border rounded">
-</div>
+            <div>
+                <label class="text-sm text-gray-600">ความชื้นเตือน</label>
+                <input id="limit-soil" type="number" class="w-full mt-1 p-2 border rounded">
+            </div>
 
-<div>
-<label class="text-sm text-gray-600">ความชื้นดินเตือน (%)</label>
-<input id="limit-soil" type="number" class="w-full mt-1 p-2 border rounded">
-</div>
+        </div>
 
-</div>
+        <button onclick="saveLimit()"
+            class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-bold">
+            บันทึกค่า Limit
+        </button>
+    </div>
 
-<button onclick="saveLimit()"
-class="mt-6 w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-lg font-bold">
-บันทึกค่า
-</button>
+    <!-- ================= DEVICE CONTROL ================= -->
+    <div class="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto border-t-4 border-green-500">
+        <h2 class="text-xl font-bold text-center mb-6">Device Control</h2>
 
-</div>
+        <div class="flex flex-col space-y-4">
+            <button onclick="sendCommand('on')"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-lg">
+                เปิดระบบ (LED ON)
+            </button>
+
+            <button onclick="sendCommand('off')"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg">
+                ปิดระบบ (LED OFF)
+            </button>
+        </div>
+
+        <div class="mt-4 text-center text-sm">
+            คำสั่งล่าสุด: <span id="last-cmd" class="font-bold">--</span>
+        </div>
+    </div>
 
 </div>
 
 <script>
-
-/* ================= FIREBASE CONFIG ================= */
-firebase.initializeApp({
-apiKey: "AIzaSy...",
-authDomain: "wifi-73e6a.firebaseapp.com",
-databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com/",
-projectId: "wifi-73e6a",
-storageBucket: "wifi-73e6a.appspot.com"
-});
-
+/* ================= FIREBASE ================= */
+const firebaseConfig = {
+    apiKey: "AIzaSy...",
+    databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com/",
+    projectId: "wifi-73e6a",
+};
+firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ================= CONNECTION STATUS ================= */
-firebase.database().ref(".info/connected").on("value", snap => {
-
-const online = snap.val();
-
-document.getElementById("status").innerText =
-online ? "🟢 เชื่อมต่อ Firebase แล้ว" : "🔴 หลุดการเชื่อมต่อ";
-
-});
-
-/* ================= LIMIT DEFAULT ================= */
+/* ================= SENSOR READ ================= */
 let tempLimit = 30;
-let soilLimit = 30;
+let soilLimit = 700;
 
-/* ================= LOAD LIMIT ================= */
+// Temperature
+db.ref("sensor/temp").on("value", snap => {
+    const v = snap.val();
+    document.getElementById("temp-val").innerText = v?.toFixed(1) ?? "--";
+    document.getElementById("temp-status").innerText =
+        v >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+});
+
+// Soil
+db.ref("sensor/soil").on("value", snap => {
+    const v = snap.val();
+    document.getElementById("soil-val").innerText = v ?? "--";
+    document.getElementById("soil-status").innerText =
+        v >= soilLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
+});
+
+// LDR
+db.ref("sensor/light").on("value", snap => {
+    const v = snap.val();
+    document.getElementById("ldr-val").innerText = v == 1 ? "🌞 สว่าง" : "🌙 มืด";
+    document.getElementById("ldr-status").innerText = "สถานะปัจจุบัน";
+});
+
+/* ================= LIMIT ================= */
 db.ref("limit").on("value", snap => {
-
-const d = snap.val();
-if (!d) return;
-
-tempLimit = d.temp ?? 30;
-soilLimit = d.soil ?? 30;
-
-document.getElementById("limit-temp").value = tempLimit;
-document.getElementById("limit-soil").value = soilLimit;
-
+    const data = snap.val();
+    if (data) {
+        tempLimit = data.temp;
+        soilLimit = data.soil;
+        document.getElementById("limit-temp").value = tempLimit;
+        document.getElementById("limit-soil").value = soilLimit;
+    }
 });
 
-/* ================= SENSOR LISTENER ================= */
-db.ref("sensor").on("value", snap => {
+function saveLimit() {
+    const t = Number(document.getElementById("limit-temp").value);
+    const s = Number(document.getElementById("limit-soil").value);
 
-const d = snap.val();
-console.log("Sensor Update:", d);
+    db.ref("limit").set({
+        temp: t,
+        soil: s
+    });
 
-if (!d) return;
-
-/* ===== TEMP ===== */
-if (d.temp !== undefined && !isNaN(d.temp)) {
-
-const temp = Number(d.temp);
-
-document.getElementById("temp-val").innerText = temp.toFixed(1);
-
-document.getElementById("temp-status").innerText =
-temp >= tempLimit ? "🚨 เกินค่าที่ตั้งไว้" : "ปกติ";
-
+    alert("บันทึกค่าเรียบร้อย");
 }
 
-/* ===== SOIL ===== */
-if (d.soil_percent !== undefined) {
-
-const soil = Number(d.soil_percent);
-
-document.getElementById("soil-val").innerText = soil;
-
-document.getElementById("soil-status").innerText =
-soil <= soilLimit ? "🚨 ความชื้นต่ำ" : "ปกติ";
-
+/* ================= CONTROL ================= */
+function sendCommand(cmd) {
+    db.ref("control").update({ last_command: cmd });
 }
 
-/* ===== LDR ===== */
-if (d.light !== undefined) {
-
-document.getElementById("ldr-val").innerText =
-d.light == 1 ? "🌞 สว่าง" : "🌙 มืด";
-
-document.getElementById("ldr-status").innerText = "สถานะปัจจุบัน";
-
-}
-
+db.ref("control/last_command").on("value", snap => {
+    document.getElementById("last-cmd").innerText = snap.val() || "--";
 });
-
-/* ================= SAVE LIMIT ================= */
-function saveLimit(){
-
-const t = Number(document.getElementById("limit-temp").value);
-const s = Number(document.getElementById("limit-soil").value);
-
-db.ref("limit").set({
-temp: t,
-soil: s
-});
-
-alert("บันทึกค่าเรียบร้อย");
-
-}
-
 </script>
 
 </body>
