@@ -17,7 +17,6 @@
 🌿 Smart Monitor Dashboard
 </h1>
 
-<!-- SENSOR DISPLAY -->
 <div id="sensor-panel" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
 
 <!-- TEMP -->
@@ -72,122 +71,111 @@ class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-lg">
 
 <script>
 
-/* FIREBASE */
+/* ✅ FIREBASE CONFIG ตัวจริง */
 firebase.initializeApp({
-apiKey: "AIzaSy...",
-databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com/",
-projectId: "wifi-73e6a"
+  apiKey: "AIzaSyCaIHZeMx6Pa97VAHH9d_XYhPwK3gsFFg0",
+  authDomain: "wifi-73e6a.firebaseapp.com",
+  databaseURL: "https://wifi-73e6a-default-rtdb.firebaseio.com",
+  projectId: "wifi-73e6a",
+  storageBucket: "wifi-73e6a.firebasestorage.app",
+  messagingSenderId: "985107943146",
+  appId: "1:985107943146:web:4d87a38114a29507745193"
 });
 
 const db = firebase.database();
 
-/* STATE */
 let systemEnabled = true;
 
 /* CLEAR DISPLAY */
 function clearSensorDisplay(){
-
-document.getElementById("temp-val").innerText="--";
-document.getElementById("temp-status").innerText="ระบบปิด";
-
-document.getElementById("soil-val").innerText="--";
-document.getElementById("soil-status").innerText="ระบบปิด";
-
-document.getElementById("ldr-val").innerText="--";
-document.getElementById("ldr-status").innerText="ระบบปิด";
-
-document.getElementById("sensor-panel").classList.add("opacity-40");
+  tempVal("--","ระบบปิด");
+  soilVal("--","ระบบปิด");
+  ldrVal("--","ระบบปิด");
+  document.getElementById("sensor-panel").classList.add("opacity-40");
 }
 
 /* ENABLE DISPLAY */
 function enableSensorDisplay(){
-document.getElementById("sensor-panel").classList.remove("opacity-40");
+  document.getElementById("sensor-panel").classList.remove("opacity-40");
+}
+
+/* UI HELPERS */
+function tempVal(v,status){
+  document.getElementById("temp-val").innerText=v;
+  document.getElementById("temp-status").innerText=status;
+}
+
+function soilVal(v,status){
+  document.getElementById("soil-val").innerText=v;
+  document.getElementById("soil-status").innerText=status;
+}
+
+function ldrVal(v,status){
+  document.getElementById("ldr-val").innerText=v;
+  document.getElementById("ldr-status").innerText=status;
 }
 
 /* โหลดค่าเซ็นเซอร์ทันที */
 function reloadSensorData(){
+  db.ref("sensor").once("value").then(snap=>{
+    const d = snap.val();
+    if(!d) return;
 
-db.ref("sensor").once("value").then(snap=>{
+    if(d.temp!=null)
+      tempVal(d.temp.toFixed(1),"ปกติ");
 
-const d = snap.val();
-if(!d) return;
+    if(d.soil_percent!=null)
+      soilVal(d.soil_percent+" %","");
 
-if(d.temp!=null){
-document.getElementById("temp-val").innerText=d.temp.toFixed(1);
-document.getElementById("temp-status").innerText="ปกติ";
-}
-
-if(d.soil_percent!=null){
-document.getElementById("soil-val").innerText=d.soil_percent+" %";
-}
-
-if(d.light!=null){
-document.getElementById("ldr-val").innerText=
-d.light==1 ? "🌞 สว่าง":"🌙 มืด";
-}
-
-});
-
+    if(d.light!=null)
+      ldrVal(d.light==1?"🌞 สว่าง":"🌙 มืด","");
+  });
 }
 
 /* REALTIME SENSOR */
 db.ref("sensor").on("value", snap=>{
 
-if(!systemEnabled) return;
+  if(!systemEnabled) return;
 
-const d = snap.val();
-if(!d) return;
+  const d = snap.val();
+  if(!d) return;
 
-// TEMP
-if(d.temp!=null){
-document.getElementById("temp-val").innerText=d.temp.toFixed(1);
-document.getElementById("temp-status").innerText="ปกติ";
-}
+  if(d.temp!=null)
+    tempVal(d.temp.toFixed(1),"ปกติ");
 
-// SOIL
-if(d.soil_percent!=null){
+  if(d.soil_percent!=null){
 
-document.getElementById("soil-val").innerText=d.soil_percent+" %";
+    let status="ปกติ";
+    if(d.soil_percent<=30) status="🚨 ดินแห้ง";
+    else if(d.soil_percent<=60) status="🌱 กำลังดี";
+    else status="💧 ชื้นมาก";
 
-let status="ปกติ";
-if(d.soil_percent<=30) status="🚨 ดินแห้ง";
-else if(d.soil_percent<=60) status="🌱 กำลังดี";
-else status="💧 ชื้นมาก";
+    soilVal(d.soil_percent+" %",status);
+  }
 
-document.getElementById("soil-status").innerText=status;
-}
-
-// LDR
-if(d.light!=null){
-document.getElementById("ldr-val").innerText=
-d.light==1 ? "🌞 สว่าง":"🌙 มืด";
-document.getElementById("ldr-status").innerText="สถานะปัจจุบัน";
-}
+  if(d.light!=null)
+    ldrVal(d.light==1?"🌞 สว่าง":"🌙 มืด","สถานะปัจจุบัน");
 
 });
 
 /* CONTROL */
 function sendCommand(cmd){
-db.ref("control").update({last_command:cmd});
+  db.ref("control").update({last_command:cmd});
 }
 
 db.ref("control/last_command").on("value", snap=>{
 
-const cmd=snap.val() || "--";
-document.getElementById("last-cmd").innerText=cmd;
+  const cmd=snap.val() || "--";
+  document.getElementById("last-cmd").innerText=cmd;
 
-if(cmd==="off"){
-
-systemEnabled=false;
-clearSensorDisplay();
-
-}else{
-
-systemEnabled=true;
-enableSensorDisplay();
-reloadSensorData();
-
-}
+  if(cmd==="off"){
+    systemEnabled=false;
+    clearSensorDisplay();
+  }else{
+    systemEnabled=true;
+    enableSensorDisplay();
+    reloadSensorData();
+  }
 
 });
 
